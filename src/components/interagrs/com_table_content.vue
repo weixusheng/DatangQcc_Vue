@@ -1,25 +1,37 @@
 <template>
-  <el-table :data="filterTableData" style="width: 100%">
+  <el-table
+    :data="filterTableData"
+    @selection-change="handleSelectionChange"
+    style="width: 100%"
+    max-height="505px"
+  >
+    <el-table-column type="selection" width="55" />
     <el-table-column label="接口" prop="name" />
     <el-table-column label="接口名称" prop="zh_name" />
     <el-table-column label="网址" prop="url" />
     <el-table-column align="right">
       <template #header>
-        <el-input style="width: 90%;"
+        <el-input
+          style="width: 90%"
           v-model="search"
           size="large"
           placeholder="接口名称搜索"
         />
       </template>
       <template #default="scope">
-        <el-button type="primary" size="default" @click="handleEdit(scope.$index, scope.row)"
+        <el-button
+          type="primary"
+          size="default"
+          plain
+          @click="handleEdit(scope.row, scope.row.uuid)"
           >编辑参数</el-button
         >
         <el-button
           size="default"
           type="danger"
-          @click="handleDelete(scope.$index, scope.row)"
-          >删除</el-button
+          plain
+          @click="handleDelete(scope.row.uuid)"
+          >删除接口</el-button
         >
       </template>
     </el-table-column>
@@ -56,17 +68,10 @@
 </template>
 
 <script lang="ts" setup>
-import axios from "axios";
-import {
-  reactive,
-  onMounted,
-  watch,
-  toRefs,
-  computed,
-  defineComponent,
-  ref,
-  toRaw,
-} from "vue";
+import { reactive, computed, ref, toRaw } from "vue";
+import { update_interface, delete_interface } from "@/api/interface";
+import { get_current } from "@/utils/time";
+import { msg } from "@/utils/message";
 
 interface inter {
   zh_name: string;
@@ -77,32 +82,37 @@ interface inter {
   request: string;
 }
 
-// interface Props {
-//   tableData: Array<inter>;
-// } 
-
 const props = defineProps<{
   tableData: Array<inter>;
 }>();
 
-// const props = withDefaults(defineProps<Props>(), {
-//   tableData: Array,
-// });
+const multipleSelection = ref<inter[]>([]);
+defineExpose({
+  multipleSelection, //向父组件暴露 multipleSelection 变量
+});
 
-let dialogFormVisible = ref(false);
+const emit = defineEmits(["update_selected","flush_table"]);
+
 const search = ref("");
+let dialogFormVisible = ref(false);
 const formLabelWidth = "140px";
 
 const form = reactive({
   data: {
-    'name': "",
-    'zh_name': "",
-    'url': "",
-    'args': "",
-    'comment': "",
-    'request': "",
+    uuid: "",
+    name: "",
+    zh_name: "",
+    url: "",
+    args: "",
+    comment: "",
+    request: "",
   },
 });
+
+const handleSelectionChange = (val: inter[]) => {
+  multipleSelection.value = val;
+  emit("update_selected");
+};
 
 const filterTableData = computed(() =>
   props.tableData.filter(
@@ -111,9 +121,11 @@ const filterTableData = computed(() =>
       data.zh_name.toLowerCase().includes(search.value.toLowerCase())
   )
 );
-const handleEdit = (index: number, row: inter) => {
+
+const handleEdit = (row: inter, uuid: string) => {
   // 编辑当前接口
   dialogFormVisible.value = true;
+  form.data["uuid"] = uuid;
   form.data["zh_name"] = row.zh_name;
   form.data["name"] = row.name;
   form.data["url"] = row.url;
@@ -121,29 +133,36 @@ const handleEdit = (index: number, row: inter) => {
   form.data["comment"] = row.comment;
   form.data["request"] = row.request;
 };
-const handleDelete = (index: number, row: inter) => {
+
+const handleDelete = (uuid: string) => {
   // 删除当前的接口
-  console.log(index, row);
+  var updatetime = get_current;
+  var postdata = { uuid: uuid };
+  delete_interface({ data: postdata, update_time: updatetime }).then((res) => {
+    if (res.status == 200) {
+      // 删除成功
+      msg.success("删除成功");
+      emit("flush_table");
+    } else {
+      msg.error("删除失败");
+    }
+  });
 };
-function updatedata(data: any): any {
-  var myDate = new Date();
-  console.log(myDate.toLocaleString());
-  axios.post( // 更新接口参数
-      "interface/update",
-      { data: form.data, update_time: myDate.toLocaleString()},
-    )
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-}
-const handle_update = (res: any) => {
+
+const handle_update = () => {
   // 更新当前的接口
-  let shit = toRaw(form);
-  console.log(shit.data);
-  updatedata(shit.data);
+  let tmp = toRaw(form);
+  var postdata = tmp.data;
+  var updatetime = get_current;
+  update_interface({ data: postdata, update_time: updatetime }).then((res) => {
+    if (res.status == 200) {
+      msg.success("更新成功");
+      emit("flush_table");
+    } else {
+      msg.error("更新失败");
+    }
+  });
+  dialogFormVisible.value = false;
 };
 </script>
 

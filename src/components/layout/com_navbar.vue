@@ -2,11 +2,6 @@
   <el-scrollbar>
     <el-menu :default-openeds="['1']"
              :default-active="this.$route.path"
-             active-text-color="#ffd04b"
-             background-color="#545c64"
-             class="el-menu-vertical-demo"
-             default-active="2"
-             text-color="#fff"
              @open="handleOpen"
              @close="handleClose"
              router
@@ -18,7 +13,7 @@
           </el-icon>
           <span>企查查接口管理</span>
         </template>
-        <el-menu-item v-for="(item, i) in nav_config" :key="i" :index="item.router" @click="click_config">
+        <el-menu-item v-for="(item, i) in nav_config" :key="i" :index="item.router">
           <el-icon>
             <component :is="item.icon"></component>
           </el-icon>
@@ -32,7 +27,7 @@
           </el-icon>
           <span>日志查询</span>
         </template>
-        <el-menu-item v-for="(item, i) in nav_log" :key="i" :index="item.router" @click="click_log">
+        <el-menu-item v-for="(item, i) in nav_log" :key="i" :index="item.router">
           <el-icon>
             <component :is="item.icon"></component>
           </el-icon>
@@ -68,7 +63,7 @@ export default {
         {router: "/page_father", itemname: "供应商列表", icon: 'Document'},
       ],
       nav_log: [
-        {router: "/", itemname: "日志查看", icon: 'Search'},
+        {router: "/RunLog", itemname: "日志查看", icon: 'Search'},
         {router: "/", itemname: "运行记录", icon: 'Success-filled'},
       ],
       nav_setting: [
@@ -97,7 +92,7 @@ export default {
   },
 }
 </script>
-<style>
+<style scoped>
 a {
   text-decoration: none;
 }
