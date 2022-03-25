@@ -4,6 +4,7 @@
   </el-divider>
   <com_schedule_table
     v-model:tableData="fatherData"
+    v-model:count="count"
     @flush_table="get_table"
   ></com_schedule_table>
 </template>
@@ -15,11 +16,17 @@ import { get_scheduler } from "@/api/scheduler";
 import { msg } from "@/utils/message";
 
 const fatherData = ref([]);
+const count = ref(0);
 
-const get_table = () => {
-  get_scheduler().then((res) => {
+const get_table = (page: number, page_size: number) => {
+  var postdata = {
+    page: page,
+    page_size: page_size,
+  };
+  get_scheduler({ data: postdata }).then((res) => {
     if (res.status == 200) {
-      fatherData.value = res.data;
+      count.value = res.data.count;
+      fatherData.value = res.data.tabledata;
       msg.success("获取定时任务成功");
     } else {
       msg.warning("获取定时任务失败,请刷新页面");
@@ -27,5 +34,5 @@ const get_table = () => {
   });
 };
 
-get_table();
+get_table(1, 30);
 </script>

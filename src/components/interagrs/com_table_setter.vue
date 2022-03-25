@@ -118,12 +118,11 @@ const options = [
 
 const every_submit = () => {
   // 提交当前任务--每天执行
-  var updatetime = get_current;
   for (var item in props.table_selected) {
     console.log(props.table_selected[item].name);
     var interface_name = props.table_selected[item].name;
     var postdata = { time: every_time.value, interface: interface_name };
-    add_every({ data: postdata, update_time: updatetime }).then((res) => {
+    add_every({ data: postdata }).then((res) => {
       if (res.status == 200) {
         msg.success("设定定时任务成功");
         console.log("every scheduler success");
@@ -136,13 +135,11 @@ const every_submit = () => {
 
 const single_submit = () => {
   // 提交当前任务--单次执行
-  var updatetime = get_current;
-  console.log(single_time.value);
   for (var item in props.table_selected) {
     console.log(props.table_selected[item].name);
     var interface_name = props.table_selected[item].name;
     var postdata = { time: single_time.value, interface: interface_name };
-    add_single({ data: postdata, update_time: updatetime }).then((res) => {
+    add_single({ data: postdata }).then((res) => {
       if (res.status == 200) {
         msg.success("设定定时任务成功");
         console.log("single scheduler success");
@@ -155,13 +152,12 @@ const single_submit = () => {
 
 const week_submit = () => {
   // 提交当前任务--周执行
-  var updatetime = get_current;
   for (var item in props.table_selected) {
     console.log(props.table_selected[item].name);
     var interface_name = props.table_selected[item].name;
     var posttime = week.value + "-" + week_time.value;
     var postdata = { time: posttime, interface: interface_name };
-    add_week({ data: postdata, update_time: updatetime }).then((res) => {
+    add_week({ data: postdata }).then((res) => {
       if (res.status == 200) {
         msg.success("设定定时任务成功");
         console.log("week scheduler success");

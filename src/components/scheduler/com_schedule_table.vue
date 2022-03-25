@@ -3,14 +3,23 @@
     :data="filterTableData"
     style="width: 100%"
     @selection-change="handleSelectionChange"
+    table-layout="auto"
   >
-    <el-table-column type="selection" width="40" />
-    <el-table-column property="interface" label="接口" width="200" />
-    <el-table-column property="zh_name" label="接口名称" width="180" />
+    <el-table-column type="selection" />
+    <el-table-column property="interface" label="接口" />
+    <el-table-column property="zh_name" label="接口名称" />
     <el-table-column property="url" label="网址" show-overflow-tooltip />
-    <el-table-column property="type" label="定时任务类型" width="150" />
-    <el-table-column property="content" label="定时任务" width="130" />
-    <el-table-column property="time" label="创建时间" width="200" />
+    <el-table-column
+      property="type"
+      :formatter="typeFormat"
+      label="定时任务类型"
+    />
+    <el-table-column
+      property="content"
+      label="执行时间"
+      :formatter="timeFormat"
+    />
+    <el-table-column property="time" label="创建时间" />
     <el-table-column align="right">
       <template #header>
         <el-input
@@ -25,26 +34,38 @@
           type="success"
           size="default"
           plain
-          @click="handleRun(scope.$index, scope.row)"
-          >立即执行</el-button
+          @click="handleRun(scope.row.uuid)"
+          >Run</el-button
         >
         <el-button
           type="primary"
           size="default"
           plain
           @click="handlePause(scope.$index, scope.row)"
-          >暂停任务</el-button
+          >暂停</el-button
         >
         <el-button
           size="default"
           type="danger"
           plain
           @click="handleDelete(scope.$index, scope.row)"
-          >删除任务</el-button
+          >删除</el-button
         >
       </template>
     </el-table-column>
   </el-table>
+  <div style="text-align: center; margin-top: 30px">
+    <el-pagination
+      v-model:currentPage="currentPage"
+      v-model:page-size="pageSize"
+      :page-sizes="[100, 200, 300, 400]"
+      background
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="props.count"
+      @current-change="handleCurrentChange"
+    >
+    </el-pagination>
+  </div>
   <el-row style="margin-top: 30px">
     <el-button size="large" type="success" plain @click="multiple_pause"
       >批量执行</el-button
@@ -60,7 +81,11 @@
 
 <script lang="ts" setup>
 import { ref, computed } from "vue";
+import { run_now } from "@/api/scheduler";
+import { msg } from "@/utils/message";
 
+const currentPage = ref(1);
+const pageSize = ref(30);
 const search = ref("");
 const multipleSelection = ref<inter[]>([]);
 
@@ -73,6 +98,7 @@ interface inter {
 
 const props = defineProps<{
   tableData: Array<inter>;
+  count: number;
 }>();
 
 const emit = defineEmits(["flush_table"]);
@@ -84,6 +110,39 @@ const filterTableData = computed(() =>
       data.zh_name.toLowerCase().includes(search.value.toLowerCase())
   )
 );
+
+const typeFormat = (row: any) => {
+  if (row.type === "week") {
+    return "每周循环执行";
+  } else if (row.type === "everyday") {
+    return "每天循环执行";
+  } else if (row.type === "single") {
+    return "单次执行";
+  }
+};
+
+const timeFormat = (row: any) => {
+  if (row.type === "week") {
+    let time_array = row.content.split("-");
+    let week = time_array[0];
+    let time = time_array[1];
+    let dictionary = {
+      mon: "周一",
+      tue: "周二",
+      wed: "周三",
+      thu: "周四",
+      fri: "周五",
+      sat: "周六",
+      sun: "周日",
+    };
+    return dictionary[week] + " - " + time;
+  } else {
+    return row.content;
+  }
+};
+const handleCurrentChange = (val: number) => {
+  console.log(`current page: ${val}`);
+};
 
 const multiple_pause = () => {
   for (var i in multipleSelection.value) {
@@ -103,9 +162,20 @@ const handleSelectionChange = (val: inter[]) => {
   console.log(multipleSelection.value);
 };
 
-const handleRun = (index: number, row: inter) => {
+const handleRun = (row: number) => {
   // 立即执行当前任务
-  console.log(index, row);
+  console.log(row);
+  var postdata = {
+    uuid: row,
+  };
+  run_now({ data: postdata }).then((res) => {
+    if (res.status == 200) {
+      msg.success("设定定时任务成功");
+      console.log("single scheduler success");
+    } else {
+      msg.error("设定定时任务失败");
+    }
+  });
 };
 
 const handlePause = (index: number, row: inter) => {
@@ -118,31 +188,14 @@ const handleDelete = (index: number, row: inter) => {
   console.log(index, row);
   emit("flush_table");
 };
-
-const tableData: inter[] = [
-  {
-    name: "AdminLicenseCheckList",
-    zh_name: "行政区可列表",
-    url: "https://pro.qcc.com/api/yj/AdminLicenseCheck/GetList",
-    task_info: "每周 - 周三 - 10:00",
-  },
-  {
-    name: "AdminPenaltyCheckDetail",
-    zh_name: "行政处罚详情",
-    url: "https://pro.qcc.com/api/yj/AdminPenaltyCheck/GetCreditDetail",
-    task_info: "每周 - 周三 - 10:00",
-  },
-  {
-    name: "AdminPenaltyCheckList",
-    zh_name: "行政处罚列表",
-    url: "https://pro.qcc.com/api/yj/AdminPenaltyCheck/GetList",
-    task_info: "每周 - 周三 - 10:00",
-  },
-];
 </script>
 
 <style scoped>
 .el-row {
   margin-top: 20px;
+}
+
+.el-pagination {
+  justify-content: right;
 }
 </style>

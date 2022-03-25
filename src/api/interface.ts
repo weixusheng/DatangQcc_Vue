@@ -1,9 +1,10 @@
 import { Request } from "@/utils/request";
 
-export function get_interface() {
+export function get_interface(parameter: any) {
   return Request.axiosInstance({
     url: "interface/get_list",
-    method: "get"
+    method: "post",
+    data: parameter
   });
 }
 
